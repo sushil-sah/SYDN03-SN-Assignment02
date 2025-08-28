@@ -1,120 +1,111 @@
 import pandas as pd
 import glob
 import os
+from utils import data_Formatter, map_Month_To_Season
 
-# -----------------------------
-# Folder containing CSV files
-# -----------------------------
-FOLDER = r"C:/Users/KIIT/Downloads/Assignment 2/temperatures"
-OUTPUT_DIR = FOLDER  # Save output files in the same folder
+# Path to the folder containing input files
+input_Folder = './temperatures'
 
-# -----------------------------
-# Step 1: Read all CSVs and reshape data
-# -----------------------------
-all_files = glob.glob(os.path.join(FOLDER, "*.csv"))
-if not all_files:
-    raise FileNotFoundError(f"No CSV files found in {FOLDER}")
+# Path to the folder containing output files
+output_Folder = "./Q2_output"
 
 df_list = []
+
+# create a dictonary to map each months to respective numbers
 month_map = {
     "January": 1, "February": 2, "March": 3, "April": 4,
     "May": 5, "June": 6, "July": 7, "August": 8,
     "September": 9, "October": 10, "November": 11, "December": 12
 }
 
-for f in all_files:
-    temp_df = pd.read_csv(f)
-    # Extract year from filename, e.g., stations_group_1986.csv → 1986
-    year = os.path.basename(f).split("_")[-1].split(".")[0]
-    
-    # Melt month columns into long format
-    melted = temp_df.melt(
-        id_vars=["STATION_NAME", "STN_ID", "LAT", "LON"],
-        var_name="month",
-        value_name="temperature"
-    )
-    
-    # Convert month names to numbers
-    melted["month_num"] = melted["month"].map(month_map)
-    
-    # Create proper date (first day of the month)
-    melted["date"] = pd.to_datetime(
-        dict(year=int(year), month=melted["month_num"], day=1),
-        errors="coerce"
-    )
-    
-    # Rename station column
-    melted = melted.rename(columns={"STATION_NAME": "station"})
-    
-    # Keep only required columns
-    df_list.append(melted[["date", "station", "temperature"]])
 
-# Combine all years into one DataFrame
+# try catch block to handle folder and file not present exceptions
+try:
+    # checking if the input folder is presnt or not
+    if not os.path.isdir(input_Folder):
+        # checking if the folder exists or not. If folder doen't exist an Exception is raised
+        raise Exception(f'Input folder {input_Folder} doesn\'t exist')
+
+    # opening all the input files from input folder
+    all_files = glob.glob(os.path.join(input_Folder, "*.csv"))
+
+    # checking if the folder has any csv files or not. If no file is present an Exception is raised
+    if not all_files:
+        raise Exception(f"Input folder {input_Folder} has no csv files")
+    
+# raising other exceptions that can be thrown by try block
+except Exception as e:
+    raise e
+
+
+for file in all_files:
+    df_list = data_Formatter(file, month_map, df_list)
+
+# Combining all the records into a single data frame for further analysis
 df = pd.concat(df_list, ignore_index=True)
 
-# -----------------------------
-# Step 2: Clean data
-# -----------------------------
+
+# Cleaning all the NA records from the data frames
 df['temperature'] = pd.to_numeric(df['temperature'], errors='coerce')
 df = df.dropna(subset=['temperature', 'date'])
 
-# -----------------------------
-# Step 3: Define Australian seasons
-# -----------------------------
-def get_season(month):
-    if month in [12, 1, 2]:
-        return "Summer"
-    elif month in [3, 4, 5]:
-        return "Autumn"
-    elif month in [6, 7, 8]:
-        return "Winter"
-    else:
-        return "Spring"
 
-df['season'] = df['date'].dt.month.map(get_season)
 
-# -----------------------------
-# Step 4: Seasonal Average
-# -----------------------------
+# mapping months to respective Australian seasons 
+df['season'] = df['date'].dt.month.map(map_Month_To_Season)
+
+
+# Calculating the seasonal average and writing the output into a file
+average_file_name = 'average_temp.txt'
 season_order = ["Summer", "Autumn", "Winter", "Spring"]
 seasonal_avg = df.groupby('season')['temperature'].mean()
 
-with open(os.path.join(OUTPUT_DIR, "average_temp.txt"), "w") as f:
+with open(os.path.join(output_Folder, average_file_name), "w") as f:
     for season in season_order:
         if season in seasonal_avg:
             f.write(f"{season}: {seasonal_avg[season]:.1f}°C\n")
+    print(f'Output has been successfully written into file {average_file_name}')
 
-# -----------------------------
-# Step 5: Temperature Range
-# -----------------------------
-station_stats = df.groupby('station')['temperature'].agg(['max', 'min'])
+
+
+# Calculating the temperature range and writing the output into a file
+temeprature_range_file = 'largest_temp_range_station.txt'
+
+# calculating the max and min temperature for each station
+station_stats = df.groupby('STATION_NAME')['temperature'].agg(['max', 'min'])
+
+# calculating the range for each station
 station_stats['range'] = station_stats['max'] - station_stats['min']
 
+# determing the station with maximum range
 max_range = station_stats['range'].max()
 largest_range_stations = station_stats[station_stats['range'] == max_range]
 
-with open(os.path.join(OUTPUT_DIR, "largest_temp_range_station.txt"), "w") as f:
+with open(os.path.join(output_Folder, temeprature_range_file), "w") as f:
     for station, row in largest_range_stations.iterrows():
         f.write(
             f"{station}: Range {row['range']:.1f}°C "
             f"(Max: {row['max']:.1f}°C, Min: {row['min']:.1f}°C)\n"
         )
 
-# -----------------------------
-# Step 6: Temperature Stability (Std Dev)
-# -----------------------------
-station_std = df.groupby('station')['temperature'].std().dropna()
+print()
+print(f'Output has been successfully written into file {temeprature_range_file}')
 
-min_std = station_std.min()
-max_std = station_std.max()
 
-stable_stations = station_std[station_std == min_std]
-variable_stations = station_std[station_std == max_std]
+#  Calculating the station with high temperature stablity and writing the output into a file
+temperature_stability_station_file = 'temperature_stability_stations.txt'
+station_std = df.groupby('STATION_NAME')['temperature'].std().dropna()
 
-with open(os.path.join(OUTPUT_DIR, "temperature_stability_stations.txt"), "w") as f:
+# calculating the min and max standard deviation
+min_std, max_std = station_std.min(), station_std.max() 
+stable_stations, variable_stations = station_std[station_std == min_std], station_std[station_std == max_std]
+
+with open(os.path.join(output_Folder, temperature_stability_station_file), "w") as f:
     for station, val in stable_stations.items():
         f.write(f"Most Stable: {station}: StdDev {val:.1f}°C\n")
     for station, val in variable_stations.items():
         f.write(f"Most Variable: {station}: StdDev {val:.1f}°C\n")
 
+print()
+print(f'Output has been successfully written into file {temperature_stability_station_file} \n')
 print("Analysis complete. Check output files in the folder.")
