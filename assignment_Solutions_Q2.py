@@ -4,7 +4,7 @@ import os
 from utils import data_Formatter, map_Month_To_Season
 
 # Path to the folder containing input files
-input_Folder = './temperatures'
+input_Folder = './Input/Q2_input/temperatures'
 
 # Path to the folder containing output files
 output_Folder = "./Q2_output"

@@ -130,9 +130,9 @@ shift1 = int(input('Enter the value for shift1: '))
 shift2 = int(input('Enter the value for shift2: '))
 
 # assigning the file name to each variables to increase the reusability 
-raw_file = 'raw_text.txt'
-encrypted_file = 'encrypted_text.txt'
-decrypted_file = 'decrypted_text.txt'
+raw_file = 'Input/Q1_input/raw_text.txt'
+encrypted_file = 'Q1_outputs/encrypted_text.txt'
+decrypted_file = 'Q1_outputs/decrypted_text.txt'
 
 # calling the function to encrypt the original file and generate a new encrypted file
 encrypt_file(raw_file, encrypted_file, shift1, shift2)
