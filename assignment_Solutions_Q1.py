@@ -14,7 +14,7 @@ def encrypt_char(c, shift1, shift2):
             original_position = ord(c) - ord('a')
             # 2. determing the position after adding the shift that has to be applied for encryption
             shifted_position = original_position + shift
-            wrapped_position = shifted_position % 26
+            wrapped_position = shifted_position % 13
             # 3. adding wrapped position with position of 'a' to get the final position and convert it into character using chr built-in function
             encrypted_character = chr(wrapped_position + ord('a'))
             return encrypted_character
@@ -24,7 +24,7 @@ def encrypt_char(c, shift1, shift2):
             # calculating the total shift that has to be applied to a character
             shift = -(shift1 + shift2)
             # merged logic 1,2 and 3 in above logic to make the code more concise as the above code is for more clear illustration only
-            return chr((ord(c) - ord('a') + shift) % 26 + ord('a'))
+            return chr((ord(c) - ord('n') + shift) % 13 + ord('n'))
         
     elif c.isupper():
         '''
@@ -36,13 +36,13 @@ def encrypt_char(c, shift1, shift2):
         if c <= 'M':
             # calculating the shift
             shift = -shift1
-            return chr((ord(c) - ord('A') + shift) % 26 + ord('A'))
+            return chr((ord(c) - ord('A') + shift) % 13 + ord('A'))
         
         # for 2nd half of the upper case alphabets (N-Z)
         else:
             # calcualing the shift i.e shift2 ^ 2
             shift = shift2 ** 2
-            return chr((ord(c) - ord('A') + shift) % 26 + ord('A'))
+            return chr((ord(c) - ord('N') + shift) % 13 + ord('N'))
         
     # if c is not alphabet returning it without any changes
     else:
@@ -57,16 +57,16 @@ def decrypt_char(c, shift1, shift2):
                 - If the letter is in the first half of the alphabet (a-m): shift backward by shift1 * shift2 positions as it was forward in encryption
                 - If the letter is in the second half (n-z): shift forward by shift1 + shift2 positions as it was backward originally
         '''
-        if c <= 'm':
+        # Reversing the decryption for character < 'm'
+        if (ord(c))<= (ord('m')):
             # calculating the shift
             shift = -(shift1 * shift2)
-            return chr((ord(c) - ord('a') + shift) % 26 + ord('a'))
+            return chr((ord(c) - ord('a') + shift) % 13 + ord('a'))
         
         else:
             # calculating the shift
             shift = (shift1 + shift2)
-            print(chr((ord(c) - ord('a') + shift) % 26 + ord('a')))
-            return chr((ord(c) - ord('a') + shift) % 26 + ord('a'))
+            return chr((ord(c) - ord('n') + shift) % 13 + ord('n'))
         
     elif c.isupper():
         '''
@@ -74,15 +74,16 @@ def decrypt_char(c, shift1, shift2):
                 - If the letter is in the first half (A-M): shift forward by shift1 positions as it was shifted backward originally
                 - If the letter is in the second half (N-Z): shift backward by shift2² positions (shift2 squared) as it was shifted forward originally
         '''
-        if c <= 'M':
+        # Reversing the decryption for character < 'M'
+        if c<='M':
             # calculating the shift
             shift = shift1
-            return chr((ord(c) - ord('A') + shift) % 26 + ord('A'))
+            return chr((ord(c) - ord('A') + shift) % 13 + ord('A'))
         
         else:
             # calculating the shift
             shift = -(shift2 ** 2)
-            return chr((ord(c) - ord('A') + shift) % 26 + ord('A'))
+            return chr((ord(c) - ord('N') + shift) % 13 + ord('N'))
     else:
         return c
 
